@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Gemini Point-and-Read",
+  "description": "An interactive article platform where users can upload content and listen to it via high-quality Gemini TTS by clicking on text segments.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
