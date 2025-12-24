@@ -23,4 +23,5 @@ export interface Article {
   tags: string[];
   viewCount: number;
   isPublished: boolean; // 是否上架
+  coverImage?: string; // 文章封面 (Base64)
 }

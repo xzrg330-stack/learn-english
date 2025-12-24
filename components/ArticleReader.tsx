@@ -27,7 +27,6 @@ const ArticleReader: React.FC<ArticleReaderProps> = ({ article, onBack }) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsMenuOpen(false);
       }
-      // Close word popup if clicking away from a word
       if (activeWord && !(event.target as HTMLElement).closest('strong')) {
         setActiveWord(null);
         setWordPopupPos(null);
@@ -116,13 +115,12 @@ const ArticleReader: React.FC<ArticleReaderProps> = ({ article, onBack }) => {
     e.stopPropagation(); 
     stopWordAudio();
 
-    // Calculate position
     const rect = e.currentTarget.getBoundingClientRect();
     const containerRect = containerRef.current?.getBoundingClientRect();
     
     if (containerRect) {
       setWordPopupPos({
-        top: rect.top - containerRect.top - 10, // 10px spacing
+        top: rect.top - containerRect.top - 10,
         left: rect.left - containerRect.left + (rect.width / 2)
       });
     }
@@ -190,12 +188,12 @@ const ArticleReader: React.FC<ArticleReaderProps> = ({ article, onBack }) => {
       <div className="flex justify-between items-center mb-6">
         <button 
           onClick={onBack}
-          className="py-2 px-1 flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors font-semibold text-sm sm:text-base"
+          className="py-2 px-1 flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors font-bold text-sm sm:text-base"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          返回书库
+          返回列表
         </button>
 
         <div className="relative" ref={menuRef}>
@@ -208,7 +206,7 @@ const ArticleReader: React.FC<ArticleReaderProps> = ({ article, onBack }) => {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             </svg>
-            <span className="text-sm font-bold hidden sm:inline">语速设置</span>
+            <span className="text-sm font-bold hidden sm:inline">语速</span>
           </button>
 
           {isMenuOpen && (
@@ -232,29 +230,34 @@ const ArticleReader: React.FC<ArticleReaderProps> = ({ article, onBack }) => {
         </div>
       </div>
 
-      <header className="mb-10 border-b border-gray-100 pb-8">
+      <header className="mb-10">
+        {article.coverImage && (
+          <div className="w-full aspect-video rounded-[2.5rem] overflow-hidden mb-8 shadow-2xl shadow-blue-100/50 border border-slate-100">
+            <img src={article.coverImage} alt={article.title} className="w-full h-full object-cover" />
+          </div>
+        )}
         <div className="flex flex-wrap gap-2 mb-4">
           {article.tags.map(tag => (
-            <span key={tag} className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-widest">
+            <span key={tag} className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest">
               {tag}
             </span>
           ))}
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight mb-6 serif-font">
+        <h1 className="text-3xl sm:text-4xl font-black text-gray-900 leading-tight mb-6 serif-font">
           {article.title}
         </h1>
         <div className="flex items-center gap-4 text-gray-500 text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-black shadow-sm">
               {article.author[0].toUpperCase()}
             </div>
-            <span className="font-semibold text-gray-700">{article.author}</span>
+            <span className="font-bold text-gray-700">{article.author}</span>
           </div>
-          <span className="font-medium">{new Date(article.createdAt).toLocaleDateString()}</span>
+          <span className="font-bold text-[10px] uppercase tracking-widest">{new Date(article.createdAt).toLocaleDateString()}</span>
         </div>
+        <div className="h-px bg-slate-100 w-full mt-8"></div>
       </header>
 
-      {/* Vocabulary Definition Popup */}
       {activeWord && wordPopupPos && (
         <div 
           className="absolute z-[60] animate-in zoom-in-95 fade-in slide-in-from-bottom-2 duration-200"
@@ -267,8 +270,7 @@ const ArticleReader: React.FC<ArticleReaderProps> = ({ article, onBack }) => {
           <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-blue-100 p-4 min-w-[200px] max-w-[280px]">
             <h4 className="text-lg font-black text-blue-600 mb-1">{activeWord.word}</h4>
             <div className="h-px bg-blue-50 w-full mb-2"></div>
-            <p className="text-gray-600 text-sm leading-relaxed">{activeWord.definition}</p>
-            {/* Arrow pointing down */}
+            <p className="text-gray-600 text-sm leading-relaxed font-bold">{activeWord.definition}</p>
             <div className="absolute left-1/2 -bottom-2 -translate-x-1/2 w-4 h-4 bg-white/95 border-r border-b border-blue-100 rotate-45"></div>
           </div>
         </div>
@@ -280,29 +282,29 @@ const ArticleReader: React.FC<ArticleReaderProps> = ({ article, onBack }) => {
             key={seg.id}
             onClick={() => handlePointRead(seg.id, seg.audioData)}
             className={`
-              relative p-4 rounded-2xl cursor-pointer transition-all duration-300 leading-relaxed
+              relative p-5 rounded-3xl cursor-pointer transition-all duration-500 leading-relaxed
               ${activeSegmentId === seg.id 
-                ? 'bg-blue-600 text-white shadow-xl transform scale-[1.01] z-10' 
-                : 'hover:bg-gray-50 text-gray-800'
+                ? 'bg-blue-600 text-white shadow-2xl shadow-blue-200 transform scale-[1.02] z-10' 
+                : 'hover:bg-slate-50 text-gray-800'
               }
-              ${!seg.audioData ? 'opacity-70 italic cursor-default' : ''}
+              ${!seg.audioData ? 'opacity-60 italic cursor-default' : ''}
             `}
           >
-            <div className={`text-lg sm:text-xl font-medium ${activeSegmentId === seg.id ? 'text-white' : 'text-gray-800'}`}>
+            <div className={`text-xl sm:text-2xl font-black ${activeSegmentId === seg.id ? 'text-white' : 'text-gray-800'}`}>
               {renderHighlightedText(seg.text)}
             </div>
             
             {seg.translation && activeSegmentId === seg.id && (
-              <div className="mt-2 pt-2 border-t border-white/20 animate-in fade-in slide-in-from-top-1 duration-300">
-                <p className="text-sm sm:text-base text-blue-50 font-sans italic opacity-90">
+              <div className="mt-3 pt-3 border-t border-white/20 animate-in fade-in slide-in-from-top-1 duration-300">
+                <p className="text-base sm:text-lg text-blue-50 font-sans font-bold opacity-90">
                   {seg.translation}
                 </p>
               </div>
             )}
             
             {activeSegmentId === seg.id && (
-              <span className="absolute -top-1.5 -right-1.5 bg-white text-blue-600 rounded-full p-1.5 shadow-md border border-blue-100">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <span className="absolute -top-2 -right-2 bg-white text-blue-600 rounded-full p-2 shadow-lg border border-blue-100 animate-bounce">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
                 </svg>
               </span>
@@ -312,14 +314,14 @@ const ArticleReader: React.FC<ArticleReaderProps> = ({ article, onBack }) => {
       </div>
 
       {(activeSegmentId !== null || isLoading) && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 animate-in slide-in-from-bottom-4">
+        <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-40 animate-in slide-in-from-bottom-6">
           <button 
             onClick={stopAudio}
-            className="flex items-center gap-3 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl transition-all active:scale-95 group"
+            className="flex items-center gap-3 bg-slate-900 hover:bg-black text-white px-8 py-4 rounded-full shadow-2xl transition-all active:scale-95 group border border-slate-700"
           >
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-            <span className="font-bold text-sm tracking-widest uppercase">停止播放</span>
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-ping"></div>
+            <span className="font-black text-xs tracking-[0.2em] uppercase">停止播放</span>
+            <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
             </svg>
           </button>

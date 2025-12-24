@@ -3,7 +3,6 @@ import React, { useState, useRef } from 'react';
 import { Article, ArticleSegment, VocabularyItem } from '../types';
 
 interface ArticleEditorProps {
-  // Fix: Omit 'isPublished' from the saved article data as it's managed separately in the admin list.
   onSave: (article: Omit<Article, 'id' | 'createdAt' | 'viewCount' | 'isPublished'>) => void;
   initialArticle?: Article;
 }
@@ -13,6 +12,7 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ onSave, initialArticle })
   const [title, setTitle] = useState(initialArticle?.title || '');
   const [author, setAuthor] = useState(initialArticle?.author || '');
   const [tags, setTags] = useState(initialArticle?.tags.join(', ') || '');
+  const [coverImage, setCoverImage] = useState(initialArticle?.coverImage || '');
   const [rawContent, setRawContent] = useState('');
   const [segments, setSegments] = useState<ArticleSegment[]>(initialArticle?.segments || []);
   const [vocab, setVocab] = useState<VocabularyItem[]>(initialArticle?.keyVocabulary || []);
@@ -36,9 +36,20 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ onSave, initialArticle })
   };
 
   const handleNextStep = () => {
-    if (!title || !rawContent) return;
-    setSegments(splitIntoSentences(rawContent));
+    if (!title || (!rawContent && segments.length === 0)) return;
+    if (segments.length === 0) {
+      setSegments(splitIntoSentences(rawContent));
+    }
     setStep(2);
+  };
+
+  const handleCoverUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      setCoverImage(base64);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleAddVocab = () => {
@@ -93,7 +104,6 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ onSave, initialArticle })
       try {
         buffer = await ctx.decodeAudioData(arrayBuffer.buffer);
       } catch (e) {
-        // Fallback to PCM 24k Mono if not standard format
         const dataInt16 = new Int16Array(arrayBuffer.buffer);
         buffer = ctx.createBuffer(1, dataInt16.length, 24000);
         const channelData = buffer.getChannelData(0);
@@ -115,13 +125,13 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ onSave, initialArticle })
       alert("请至少保留一个段落片段");
       return;
     }
-    // Fix: Passing fields that match Omit<Article, 'id' | 'createdAt' | 'viewCount' | 'isPublished'>
     onSave({
       title,
-      author: author || 'Anonymous',
+      author: author || '名师AI',
       segments,
       keyVocabulary: vocab,
       tags: tags.split(',').map(t => t.trim()).filter(t => t !== ''),
+      coverImage: coverImage,
     });
   };
 
@@ -141,31 +151,68 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ onSave, initialArticle })
       <div className="p-6 sm:p-10">
         {step === 1 ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="文章标题"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                className="w-full px-5 py-3 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-bold text-gray-800"
-              />
-              <input
-                type="text"
-                placeholder="作者"
-                value={author}
-                onChange={e => setAuthor(e.target.value)}
-                className="w-full px-5 py-3 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-semibold text-gray-800"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-1">
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">文章封面</label>
+                <div 
+                  className={`aspect-video rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative group
+                    ${coverImage ? 'border-transparent' : 'border-gray-200 hover:border-blue-400 bg-gray-50'}`}
+                >
+                  {coverImage ? (
+                    <>
+                      <img src={coverImage} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="text-white text-xs font-bold bg-blue-600 px-3 py-1.5 rounded-full">更换图片</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center p-4">
+                      <svg className="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      <p className="text-[10px] font-bold text-gray-400">点击上传封面</p>
+                    </div>
+                  )}
+                  <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files && handleCoverUpload(e.target.files[0])} />
+                </div>
+              </div>
+              <div className="md:col-span-2 space-y-4">
+                <input
+                  type="text"
+                  placeholder="文章标题"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  className="w-full px-5 py-3 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-bold text-gray-800"
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    placeholder="作者"
+                    value={author}
+                    onChange={e => setAuthor(e.target.value)}
+                    className="w-full px-5 py-3 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-semibold text-gray-800"
+                  />
+                  <input
+                    type="text"
+                    placeholder="标签 (逗号分隔)"
+                    value={tags}
+                    onChange={e => setTags(e.target.value)}
+                    className="w-full px-5 py-3 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-semibold text-gray-800"
+                  />
+                </div>
+              </div>
             </div>
-            <textarea
-              placeholder="在此粘贴文章内容..."
-              value={rawContent}
-              onChange={e => setRawContent(e.target.value)}
-              className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none h-64 resize-none leading-relaxed text-gray-800"
-            />
+            
+            {!initialArticle && (
+              <textarea
+                placeholder="在此粘贴文章内容..."
+                value={rawContent}
+                onChange={e => setRawContent(e.target.value)}
+                className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none h-64 resize-none leading-relaxed text-gray-800"
+              />
+            )}
+            
             <button
               onClick={handleNextStep}
-              disabled={!title || !rawContent}
+              disabled={!title || (!rawContent && segments.length === 0)}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-black py-4 rounded-2xl shadow-lg transition-all"
             >
               下一步：管理上传音频
@@ -277,8 +324,8 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ onSave, initialArticle })
             </section>
 
             <div className="flex gap-4 pt-4">
-              <button onClick={() => setStep(1)} className="flex-1 px-6 py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl">返回修改原文</button>
-              <button onClick={handleSubmit} className="flex-[2] px-6 py-4 bg-green-600 text-white font-bold rounded-2xl shadow-lg uppercase tracking-widest text-sm">发布文章</button>
+              <button onClick={() => setStep(1)} className="flex-1 px-6 py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl">返回修改基础信息</button>
+              <button onClick={handleSubmit} className="flex-[2] px-6 py-4 bg-green-600 text-white font-bold rounded-2xl shadow-lg uppercase tracking-widest text-sm">完成并保存文章</button>
             </div>
           </div>
         )}
